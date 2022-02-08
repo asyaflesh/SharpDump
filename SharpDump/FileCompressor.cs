@@ -1,21 +1,24 @@
 ﻿using System;
 using System.IO;
 using System.IO.Compression;
+using SharpDump.Interfeces;
 
 namespace SharpDump
 {
-    public class FileCompressor
+    public class FileCompressor : IFileCompressor
     {
-        public static void Compress(string inFile, string outFile)
+        private readonly IWorkingWithFile _workingWithFile = new WorkingWithFile();
+
+        public void Compress(string inFile, string outFile)
         {
-            if (File.Exists(outFile))
+            if (_workingWithFile.FileExists(outFile))
             {
-                File.Delete(outFile);
+                _workingWithFile.FileDelete(outFile);
                 throw new IOException("file exists");
             }
             try
             {
-                var bytes = File.ReadAllBytes(inFile);
+                var bytes = _workingWithFile.FileReadAllBytes(inFile);
                 using (FileStream fs = new FileStream(outFile, FileMode.CreateNew))
                 {
                     using (GZipStream zipStream = new GZipStream(fs, CompressionMode.Compress, false))

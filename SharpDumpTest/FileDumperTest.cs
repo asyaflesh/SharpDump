@@ -6,12 +6,14 @@ namespace SharpDumpTest
 {
     public class FileDumperTest
     {
+        private readonly FileDumper _fileDumper = new FileDumper();
+
         [Fact]
         public void FileDumper_WithoutParameters_ReturnsException()
         {
             Assert.Throws<Exception>(() =>
             {
-                FileDumper.MiniDump();
+                _fileDumper.MiniDump();
             });
         }
 
@@ -20,7 +22,7 @@ namespace SharpDumpTest
         {
             Assert.Throws<Exception>(() =>
             {
-                FileDumper.MiniDump(1000);
+                _fileDumper.MiniDump(1000);
             });
         }
     }

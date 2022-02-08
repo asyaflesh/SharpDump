@@ -1,25 +1,28 @@
 ﻿using System;
 using System.IO;
+using SharpDump.Interfeces;
 
 namespace SharpDump
 {
     class Program
     {
-        
         static void Main(string[] args)
         {
+            FileDumper fileDumper = new FileDumper();
+            IMessages message = new Messages();
+
             string systemRoot = Environment.GetEnvironmentVariable("SystemRoot");
-            string dumpDir = String.Format("{0}\\Temp\\", systemRoot);
+            string dumpDir = $"{systemRoot}\\Temp\\";
             if (!Directory.Exists(dumpDir))
             {
-                Console.WriteLine(String.Format("\n[X] Dump directory \"{0}\" doesn't exist!\n", dumpDir));
+                Console.WriteLine(message.DumpDirecroryDoesNotExist(dumpDir));
                 return;
             }
 
-            if (args.Length ==0)
+            if (args.Length == 0)
             {
                 // dump LSASS by default
-                FileDumper.MiniDump();
+                fileDumper.MiniDump();
             }
             else if (args.Length == 1)
             {
@@ -27,16 +30,16 @@ namespace SharpDump
                 if (int.TryParse(Convert.ToString(args[0]), System.Globalization.NumberStyles.Any, System.Globalization.NumberFormatInfo.InvariantInfo, out retNum))
                 {
                     // arg is a number, so we're specifying a PID
-                    FileDumper.MiniDump(retNum);
+                    fileDumper.MiniDump(retNum);
                 }
                 else
                 {
-                    Console.WriteLine("\nPlease use \"SharpDump.exe [pid]\" format\n");
+                    Console.WriteLine(message.PleaseUseSharpdumpExePidFormat());
                 }
             }
             else if (args.Length == 2)
             {
-                Console.WriteLine("\nPlease use \"SharpDump.exe [pid]\" format\n");
+                Console.WriteLine(message.PleaseUseSharpdumpExePidFormat());
             }
         }
     }
